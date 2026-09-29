@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+:root {
+  --clario-green: #58cc02;
+  --clario-green-dark: #46a302;
+  --clario-green-deep: #2e7000;
+  --clario-green-light: #d7ffb8;
+  --clario-green-soft: #f2fcf3;
+  --clario-bg: #f8fafc;
+  --clario-surface: #ffffff;
+  --clario-border: #e2e8f0;
+  --clario-text: #334155;
+  --clario-text-heading: #0f172a;
+  --clario-gold: #ffc800;
+  --clario-orange: #ff9600;
+  --clario-blue: #1cb0f6;
+  --clario-red: #ff4b4b;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background-color: var(--clario-bg);
+  color: var(--clario-text);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Duolingo-Inspired 3D Buttons & Controls ────────────────────────────── */
+
+.btn-duo-green {
+  background-color: #58cc02;
+  color: #ffffff;
+  border-bottom: 4px solid #46a302;
+  border-radius: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+.btn-duo-green:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.btn-duo-green:active:not(:disabled) {
+  transform: translateY(3px);
+  border-bottom-width: 1px;
+  margin-bottom: 3px;
+}
+.btn-duo-green:disabled {
+  background-color: #cbd5e1;
+  border-bottom: 4px solid #94a3b8;
+  color: #64748b;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.btn-duo-secondary {
+  background-color: #ffffff;
+  color: #475569;
+  border: 2px solid #e2e8f0;
+  border-bottom: 4px solid #cbd5e1;
+  border-radius: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+.btn-duo-secondary:hover:not(:disabled) {
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+.btn-duo-secondary:active:not(:disabled) {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+  margin-bottom: 2px;
+}
+.btn-duo-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-duo-blue {
+  background-color: #1cb0f6;
+  color: #ffffff;
+  border-bottom: 4px solid #1899d6;
+  border-radius: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+.btn-duo-blue:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.btn-duo-blue:active:not(:disabled) {
+  transform: translateY(3px);
+  border-bottom-width: 1px;
+  margin-bottom: 3px;
+}
+
+/* ─── Duolingo-Inspired Rounded Cards ────────────────────────────────────── */
+
+.card-duo {
+  background-color: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-bottom: 4px solid #cbd5e1;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card-duo-interactive:hover {
+  transform: translateY(-2px);
+  border-color: #86efac;
+  border-bottom-color: #58cc02;
+}
+
+.card-duo-green {
+  background-color: #ffffff;
+  border: 2px solid #bbf7d0;
+  border-bottom: 4px solid #86efac;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+}
+
+/* ─── Gamified Pills & Badges ────────────────────────────────────────────── */
+
+.pill-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 0.875rem;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.pill-xp {
+  background-color: #fef9c3;
+  color: #a16207;
+  border-color: #fde047;
+}
+
+.pill-streak {
+  background-color: #ffedd5;
+  color: #c2410c;
+  border-color: #fdba74;
+}
+
+.pill-badge {
+  background-color: #ede9fe;
+  color: #6d28d9;
+  border-color: #ddd6fe;
+}
+
+.pill-green {
+  background-color: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+/* ─── Smooth Custom Scrollbars ───────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
