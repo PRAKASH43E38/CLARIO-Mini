@@ -81,6 +81,7 @@ export const LevelExecution: React.FC<LevelExecutionProps> = ({
   });
   const [miraLesson, setMiraLesson] = useState<string>('');
   const [miraInterviewUrl, setMiraInterviewUrl] = useState<string | null>(null);
+  const [miraCheckpoints, setMiraCheckpoints] = useState<any[]>([]);
   const [miraResponseText, setMiraResponseText] = useState<string>('I have read and understood the foundational concepts.');
   const [miraNeedsClarification, setMiraNeedsClarification] = useState(false);
 
@@ -133,6 +134,7 @@ export const LevelExecution: React.FC<LevelExecutionProps> = ({
       setNovaResearch(data.nova || { summary: '', sources: [], facts: [] });
       setMiraLesson(data.mira?.lesson_content || '');
       setMiraInterviewUrl(data.mira?.interview_url || (data.mira?.is_interview ? 'https://www.indiabix.com/' : null));
+      setMiraCheckpoints(data.mira?.checkpoint_questions || []);
       setActiveStep('mira');
       await refreshWorkflowState();
     } catch (err: any) {
@@ -494,6 +496,32 @@ export const LevelExecution: React.FC<LevelExecutionProps> = ({
                   </p>
                 </div>
               )}
+              {/* Mira's 5 Concept Checkpoints */}
+              {miraCheckpoints.length > 0 && (
+                <div className="p-5 rounded-2xl bg-[#f0fdf4] border-2 border-emerald-200 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🐼</span>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-emerald-950">
+                      Mira&apos;s 5 Conceptual Checkpoints (Logically Structured)
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2.5">
+                    {miraCheckpoints.map((cp: any, idx: number) => (
+                      <div key={cp.question_id || idx} className="p-3.5 rounded-xl bg-white border border-emerald-100 flex items-start gap-3 shadow-xs">
+                        <span className="w-6 h-6 rounded-full bg-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] font-black uppercase text-emerald-700 tracking-wider">
+                            {cp.stage || cp.focus || `Checkpoint ${idx + 1}`}
+                          </span>
+                          <p className="text-xs font-bold text-slate-800">{cp.question}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Learner Response Input */}
@@ -675,23 +703,104 @@ export const LevelExecution: React.FC<LevelExecutionProps> = ({
             />
           </div>
 
-          {/* Current Question Box */}
-          <div className="p-6 rounded-2xl bg-[#f8fafc] border-2 border-slate-200 space-y-4">
-            <h3 className="text-lg font-black text-slate-900">
-              {zaynData.questions[currentQuizIdx]?.question_text}
-            </h3>
+          {/* Current Question Box with specialized UI per type */}
+          {(() => {
+            const currentQ = zaynData.questions[currentQuizIdx];
+            const isEasy = currentQ?.difficulty === 'Easy' || currentQ?.question_type === 'Fill in the Blank';
+            const isMedium = currentQ?.difficulty === 'Medium' || currentQ?.question_type === 'Paragraph';
+            const isHard = currentQ?.difficulty === 'Hard' || currentQ?.question_type === 'Python Coding';
 
-            <textarea
-              value={quizAnswers[zaynData.questions[currentQuizIdx]?.question_id] || ''}
-              onChange={(e) => {
-                const qId = zaynData.questions[currentQuizIdx]?.question_id;
-                setQuizAnswers({ ...quizAnswers, [qId]: e.target.value });
-              }}
-              className="w-full rounded-xl border-2 border-slate-200 p-4 text-sm text-slate-800 font-medium focus:outline-none focus:border-[#58cc02] transition"
-              rows={3}
-              placeholder="Type your answer here..."
-            />
-          </div>
+            return (
+              <div className="p-6 rounded-2xl bg-[#f8fafc] border-2 border-slate-200 space-y-4">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  {isEasy && (
+                    <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+                      ✏️ EASY (30s) • FILL IN THE BLANK
+                    </span>
+                  )}
+                  {isMedium && (
+                    <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-blue-100 text-blue-900 border border-blue-300">
+                      📝 MEDIUM (60s) • PARAGRAPH ANALYSIS
+                    </span>
+                  )}
+                  {isHard && (
+                    <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-slate-900 text-emerald-400 border border-slate-700">
+                      🐍 HARD (90s) • PYTHON CODING CHALLENGE
+                    </span>
+                  )}
+                  <span className="text-xs text-slate-500 font-bold">
+                    Target Concept: <strong className="text-slate-800">{currentQ?.concept}</strong>
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 leading-snug">
+                    {currentQ?.question_text}
+                  </h3>
+                  {isEasy && (
+                    <p className="text-xs text-amber-800 font-medium">
+                      💡 Tip: Identify the missing word or keyword represented by <code className="bg-amber-100 px-1.5 py-0.5 rounded text-amber-900 font-bold">____</code>.
+                    </p>
+                  )}
+                  {isMedium && (
+                    <p className="text-xs text-blue-800 font-medium">
+                      💡 Tip: Formulate a cohesive paragraph explaining causes, system dynamics, and mitigation.
+                    </p>
+                  )}
+                  {isHard && (
+                    <p className="text-xs text-slate-600 font-medium">
+                      💡 Tip: Write complete, syntactically correct Python code with appropriate parameter names and return statements.
+                    </p>
+                  )}
+                </div>
+
+                {/* Input area customized per question type */}
+                {isHard ? (
+                  <div className="rounded-2xl bg-slate-950 p-4 border-2 border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 border-b border-slate-800 pb-2">
+                      <span className="flex items-center gap-1.5 font-bold text-emerald-400">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                        solution.py
+                      </span>
+                      <span className="text-slate-500 font-bold">Python 3</span>
+                    </div>
+                    <textarea
+                      value={quizAnswers[currentQ?.question_id] || ''}
+                      onChange={(e) => {
+                        const qId = currentQ?.question_id;
+                        setQuizAnswers({ ...quizAnswers, [qId]: e.target.value });
+                      }}
+                      className="w-full bg-transparent text-emerald-300 font-mono text-xs sm:text-sm p-2 focus:outline-none resize-y leading-relaxed"
+                      rows={6}
+                      placeholder={`# Write your Python implementation here\ndef solution():\n    pass`}
+                    />
+                  </div>
+                ) : isEasy ? (
+                  <input
+                    type="text"
+                    value={quizAnswers[currentQ?.question_id] || ''}
+                    onChange={(e) => {
+                      const qId = currentQ?.question_id;
+                      setQuizAnswers({ ...quizAnswers, [qId]: e.target.value });
+                    }}
+                    className="w-full rounded-xl border-2 border-slate-200 p-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-[#58cc02] transition"
+                    placeholder="Type the exact word / keyword for the blank (____)..."
+                  />
+                ) : (
+                  <textarea
+                    value={quizAnswers[currentQ?.question_id] || ''}
+                    onChange={(e) => {
+                      const qId = currentQ?.question_id;
+                      setQuizAnswers({ ...quizAnswers, [qId]: e.target.value });
+                    }}
+                    className="w-full rounded-xl border-2 border-slate-200 p-4 text-sm text-slate-800 font-medium focus:outline-none focus:border-[#58cc02] transition"
+                    rows={4}
+                    placeholder="Write your comprehensive analysis paragraph here..."
+                  />
+                )}
+              </div>
+            );
+          })()}
 
           {/* Question Navigation */}
           <div className="flex items-center justify-between gap-4 pt-2">

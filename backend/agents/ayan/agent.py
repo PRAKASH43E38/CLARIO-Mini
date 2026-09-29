@@ -62,9 +62,66 @@ class AyanAgent:
 
         # Ensure response is a Pydantic model
         if isinstance(raw_response, AyanThinkingResponse):
-            return raw_response
+            response = raw_response
+        else:
+            response = AyanThinkingResponse(**raw_response)
 
-        return AyanThinkingResponse(**raw_response)
+        # Enforce unique, non-duplicate logical critical questions
+        unique_questions = []
+        seen_texts = set()
+        for q in response.questions:
+            normalized_text = q.text.strip().lower()
+            if normalized_text not in seen_texts:
+                seen_texts.add(normalized_text)
+                unique_questions.append(q)
+
+        if not unique_questions:
+            unique_questions = self._generate_logical_critical_questions(request.concepts, request.objective)
+
+        response.questions = unique_questions
+        return response
+
+    def _generate_logical_critical_questions(self, concepts: list[str], objective: str) -> list[AyanQuestion]:
+        """Generates exactly 5 unique, logical Socratic reasoning questions across distinct categories."""
+        c1 = concepts[0] if concepts else "Core Concept"
+        c2 = concepts[1] if len(concepts) > 1 else c1
+        return [
+            AyanQuestion(
+                question_id="q-ayan-1",
+                text=f"What is the underlying causality of {c1}? Why must the system execute it this way rather than using synchronous in-memory state?",
+                type="reasoning",
+                target_concept=c1,
+                ideal_answer_guideline="Demonstrate deductive reasoning explaining causality, lifecycle dynamics, and state transitions."
+            ),
+            AyanQuestion(
+                question_id="q-ayan-2",
+                text=f"What computational and latency trade-offs emerge when relying heavily on {c1} under high concurrency?",
+                type="explanation",
+                target_concept=c1,
+                ideal_answer_guideline="Analyze resource constraints (memory, CPU, IO) and architectural bottlenecks."
+            ),
+            AyanQuestion(
+                question_id="q-ayan-3",
+                text=f"Under what specific edge conditions or race conditions would {c2} produce inconsistent results or deadlocks?",
+                type="cause_effect",
+                target_concept=c2,
+                ideal_answer_guideline="Identify boundary conditions, concurrent write conflicts, or asynchronous timing hazards."
+            ),
+            AyanQuestion(
+                question_id="q-ayan-4",
+                text=f"Why is the widespread assumption that '{c1} is universally suitable for all workloads' flawed or dangerous in production?",
+                type="misconception",
+                target_concept=c1,
+                ideal_answer_guideline="Deconstruct common industry misconceptions and identify scenarios where alternatives outperform it."
+            ),
+            AyanQuestion(
+                question_id="q-ayan-5",
+                text=f"How does {c1} integrate with {c2} to guarantee fault tolerance and zero data corruption during partial system failures?",
+                type="application",
+                target_concept=c2,
+                ideal_answer_guideline="Synthesize system-level interactions, retry policies, and transactional boundaries."
+            )
+        ]
 
     def _build_prompt(self, request: AyanThinkingRequest) -> str:
         """

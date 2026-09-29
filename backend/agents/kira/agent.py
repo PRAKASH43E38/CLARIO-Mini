@@ -62,9 +62,61 @@ class KiraAgent:
 
         # Ensure response is a Pydantic model
         if isinstance(raw_response, KiraApplicationResponse):
-            return raw_response
+            response = raw_response
+        else:
+            response = KiraApplicationResponse(**raw_response)
 
-        return KiraApplicationResponse(**raw_response)
+        # Enforce unique, non-duplicate logical scenarios
+        unique_scenarios = []
+        seen_texts = set()
+        for s in response.scenarios:
+            normalized_text = s.text.strip().lower()
+            if normalized_text not in seen_texts:
+                seen_texts.add(normalized_text)
+                unique_scenarios.append(s)
+
+        if not unique_scenarios:
+            unique_scenarios = self._generate_logical_application_scenarios(request.concepts, request.objective)
+
+        response.scenarios = unique_scenarios
+        return response
+
+    def _generate_logical_application_scenarios(self, concepts: list[str], objective: str) -> list[KiraScenario]:
+        """Generates exactly 5 unique, logical real-world application scenarios across distinct production phases."""
+        c1 = concepts[0] if concepts else "Core Concept"
+        c2 = concepts[1] if len(concepts) > 1 else c1
+        return [
+            KiraScenario(
+                scenario_id="scen-kira-1",
+                text=f"Production Setup: You are architecting a new enterprise service. Detail how you configure and deploy {c1} to achieve high availability and zero initial downtime.",
+                target_concept=c1,
+                ideal_response_guideline="Provide concrete architectural configuration, dependency wiring, and initialization safeguards."
+            ),
+            KiraScenario(
+                scenario_id="scen-kira-2",
+                text=f"Incident Response: A live production service utilizing {c1} triggers critical P1 alerts with latency spiking 400% under traffic bursts. Walk through your step-by-step diagnostic and remediation runbook.",
+                target_concept=c1,
+                ideal_response_guideline="Identify profiling steps, thread/resource analysis, log telemetry inspection, and immediate mitigation."
+            ),
+            KiraScenario(
+                scenario_id="scen-kira-3",
+                text=f"Performance Optimization: Daily active users surge 10x. How do you optimize {c2} to eliminate memory leaks, minimize I/O overhead, and scale horizontal capacity?",
+                target_concept=c2,
+                ideal_response_guideline="Detail connection pooling, asynchronous caching, resource quotas, and batch processing adjustments."
+            ),
+            KiraScenario(
+                scenario_id="scen-kira-4",
+                text=f"Resilience & Fault Tolerance: An upstream dependency fails abruptly midway through a critical workflow governed by {c1}. How do you guarantee data consistency and graceful degradation?",
+                target_concept=c1,
+                ideal_response_guideline="Formulate circuit breaker integration, idempotency keys, compensating transactions, and fallback responses."
+            ),
+            KiraScenario(
+                scenario_id="scen-kira-5",
+                text=f"Enterprise Migration: You are leading the migration of legacy services to modern patterns using {c1} and {c2}. Formulate the rollout strategy, backward compatibility tests, and rollback plan.",
+                target_concept=c2,
+                ideal_response_guideline="Outline blue-green/canary deployment phases, automated regression suites, telemetry thresholds, and safe rollback triggers."
+            )
+        ]
 
     def _build_prompt(self, request: KiraApplicationRequest) -> str:
         """

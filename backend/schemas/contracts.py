@@ -249,6 +249,7 @@ class MiraTeachingResponse(BaseModel):
     suggested_pacing: str
     reference_urls: list[str] = Field(default_factory=list)
     interview_url: str | None = None
+    checkpoint_questions: list[dict[str, str]] = Field(default_factory=list)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class TeachingInteraction(BaseModel):

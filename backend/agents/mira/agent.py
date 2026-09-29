@@ -78,6 +78,13 @@ class MiraAgent:
         else:
             response = MiraTeachingResponse(**raw_response)
 
+        # Ensure 5 logical non-duplicate checkpoint questions exist
+        if not response.checkpoint_questions or len(response.checkpoint_questions) < 5:
+            response.checkpoint_questions = self._generate_logical_checkpoint_questions(
+                request.concepts,
+                request.level_objective
+            )
+
         # Ensure interview URL is explicitly included if this is an interview task
         if self._is_interview_task(request):
             interview_url = "https://www.indiabix.com/"
@@ -92,6 +99,48 @@ class MiraAgent:
                 response.reference_urls.append(interview_url)
 
         return response
+
+    def _generate_logical_checkpoint_questions(self, concepts: list[str], objective: str) -> list[dict[str, str]]:
+        """Generates exactly 5 unique, logical, non-repeating comprehension questions."""
+        c1 = concepts[0] if concepts else "Core Concept"
+        c2 = concepts[1] if len(concepts) > 1 else c1
+        return [
+            {
+                "question_id": "mira-cp-1",
+                "stage": "1. Foundational Definition",
+                "question": f"In your own words, what is the foundational principle and purpose of {c1}?",
+                "concept": c1,
+                "focus": "Core Definition & Purpose"
+            },
+            {
+                "question_id": "mira-cp-2",
+                "stage": "2. Operational Mechanism",
+                "question": f"Step-by-step, how does {c1} execute and transform inputs during runtime?",
+                "concept": c1,
+                "focus": "Execution Mechanism"
+            },
+            {
+                "question_id": "mira-cp-3",
+                "stage": "3. Critical Constraint",
+                "question": f"What crucial boundary condition or failure state must be guarded against when applying {c2}?",
+                "concept": c2,
+                "focus": "Boundary & Constraint"
+            },
+            {
+                "question_id": "mira-cp-4",
+                "stage": "4. Comparative Difference",
+                "question": f"How does the architectural approach of {c1} compare against alternative or older patterns?",
+                "concept": c1,
+                "focus": "Architectural Comparison"
+            },
+            {
+                "question_id": "mira-cp-5",
+                "stage": "5. Practical Synthesis",
+                "question": f"How do {', '.join(concepts)} integrate together to ensure clarity and system reliability?",
+                "concept": c1,
+                "focus": "Real-world Synthesis"
+            }
+        ]
 
     def _build_prompt(self, request: MiraTeachingRequest) -> str:
         """
@@ -134,6 +183,7 @@ class MiraAgent:
         4. Provide clear analogies that bridge existing knowledge to new concepts.
         5. Manage cognitive load: do not overwhelm the learner.
         6. Be encouraging but maintain academic rigor.
+        7. Provide exactly 5 logical, sequential comprehension checkpoint questions with zero duplicates.
 
         OUTPUT FORMAT:
         You must respond in a structured JSON format matching the MiraTeachingResponse schema:
@@ -141,6 +191,7 @@ class MiraAgent:
         - conceptual_breakdown: A list of key concepts with their specific explanations.
         - analogies: A list of analogies tailored to the learner's interests.
         - adaptation_rationale: Explain WHY you chose this specific teaching approach.
+        - checkpoint_questions: List of 5 distinct, sequential comprehension questions.
         - suggested_pacing: 'accelerated', 'standard', or 'measured'.
         """
         return prompt

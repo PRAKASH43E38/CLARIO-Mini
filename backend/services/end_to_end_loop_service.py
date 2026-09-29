@@ -1139,6 +1139,11 @@ class EndToEndLoopService:
                 f"[{interview_url}]({interview_url}) (IndiaBIX Interview Prep Portal)"
             )
 
+        # Ensure 5 logical non-duplicate checkpoint questions
+        checkpoint_questions = mira_result.output_data.get("checkpoint_questions")
+        if not checkpoint_questions or len(checkpoint_questions) < 5:
+            checkpoint_questions = mira_agent._generate_logical_checkpoint_questions(concepts, lvl["objective"] or "")
+
         # Persist teaching interaction
         with get_clario_ai_db() as ai_conn:
             ai_conn.execute(
@@ -1166,7 +1171,8 @@ class EndToEndLoopService:
                 "lesson_content": mira_content,
                 "concepts": concepts,
                 "interview_url": interview_url if is_interview else None,
-                "is_interview": is_interview
+                "is_interview": is_interview,
+                "checkpoint_questions": checkpoint_questions
             }
         }
 
@@ -1218,17 +1224,17 @@ class EndToEndLoopService:
         )
         ayan_result = await ayan_agent.process_task(ayan_task)
         ayan_questions = ayan_result.output_data.get("questions", [])
-        if not ayan_questions:
-            ayan_questions = [
-                {
-                    "question_id": f"q-ayan-{i}",
-                    "text": f"How does {c} connect to real-world architecture, and what trade-offs arise?",
-                    "type": "reasoning",
-                    "target_concept": c,
-                    "ideal_answer_guideline": "Explain causality"
-                }
-                for i, c in enumerate(concepts)
-            ]
+        if not ayan_questions or len(ayan_questions) < 5:
+            fallback_qs = ayan_agent._generate_logical_critical_questions(concepts, lvl["objective"] or "Critical analysis")
+            existing_texts = {q.get("text", "").strip().lower() for q in ayan_questions if isinstance(q, dict)}
+            converted_fallbacks = [fq.model_dump() if hasattr(fq, "model_dump") else fq for fq in fallback_qs]
+            for fq in converted_fallbacks:
+                if fq["text"].strip().lower() not in existing_texts:
+                    existing_texts.add(fq["text"].strip().lower())
+                    ayan_questions.append(fq)
+                if len(ayan_questions) == 5:
+                    break
+        ayan_questions = ayan_questions[:5]
 
         challenge_id = str(uuid.uuid4())
         with get_clario_ai_db() as ai_conn:
@@ -1301,16 +1307,17 @@ class EndToEndLoopService:
         )
         kira_result = await kira_agent.process_task(kira_task)
         kira_scenarios = kira_result.output_data.get("scenarios", [])
-        if not kira_scenarios:
-            kira_scenarios = [
-                {
-                    "scenario_id": f"scen-kira-{i}",
-                    "text": f"Apply {c} to solve a real-world production performance challenge.",
-                    "target_concept": c,
-                    "ideal_response_guideline": "Concrete practical application steps"
-                }
-                for i, c in enumerate(concepts)
-            ]
+        if not kira_scenarios or len(kira_scenarios) < 5:
+            fallback_scens = kira_agent._generate_logical_application_scenarios(concepts, lvl["objective"] or "Applied problem solving")
+            existing_texts = {s.get("text", "").strip().lower() for s in kira_scenarios if isinstance(s, dict)}
+            converted_fallbacks = [fs.model_dump() if hasattr(fs, "model_dump") else fs for fs in fallback_scens]
+            for fs in converted_fallbacks:
+                if fs["text"].strip().lower() not in existing_texts:
+                    existing_texts.add(fs["text"].strip().lower())
+                    kira_scenarios.append(fs)
+                if len(kira_scenarios) == 5:
+                    break
+        kira_scenarios = kira_scenarios[:5]
 
         scenario_id = str(uuid.uuid4())
         with get_clario_ai_db() as ai_conn:
@@ -1385,26 +1392,21 @@ class EndToEndLoopService:
         zayn_result = await zayn_agent.process_task(zayn_task)
         zayn_questions = zayn_result.output_data.get("questions", [])
 
-        # Ensure exact 10 questions distribution: 5 Easy, 3 Medium, 2 Hard
+        # Ensure exact 10 questions distribution: 5 Easy (Fill in the Blank), 3 Medium (Paragraph), 2 Hard (Python Coding)
         if not zayn_questions or len(zayn_questions) < 10:
-            distribution = [
-                ("Easy", 30), ("Easy", 30), ("Easy", 30), ("Easy", 30), ("Easy", 30),
-                ("Medium", 60), ("Medium", 60), ("Medium", 60),
-                ("Hard", 90), ("Hard", 90)
-            ]
-            zayn_questions = [
-                {
-                    "question_id": f"q-zayn-{i+1}",
-                    "concept": concepts[i % len(concepts)],
-                    "difficulty": diff,
-                    "question_type": "Short Answer",
-                    "question_text": f"Explain the fundamental mechanism of {concepts[i % len(concepts)]} under {diff.lower()} constraints.",
-                    "expected_answer": f"Accurate technical explanation of {concepts[i % len(concepts)]}",
-                    "time_limit_seconds": time_sec,
-                    "order": i + 1
-                }
-                for i, (diff, time_sec) in enumerate(distribution)
-            ]
+            fallback_qs = zayn_agent._generate_logical_quiz_questions(concepts, lvl["objective"] or "Quantified assessment")
+            existing_texts = {q.get("question_text", "").strip().lower() for q in zayn_questions if isinstance(q, dict)}
+            converted_fallbacks = [fq.model_dump() if hasattr(fq, "model_dump") else fq for fq in fallback_qs]
+            for fq in converted_fallbacks:
+                if fq["question_text"].strip().lower() not in existing_texts:
+                    existing_texts.add(fq["question_text"].strip().lower())
+                    zayn_questions.append(fq)
+                if len(zayn_questions) == 10:
+                    break
+
+        for i, q in enumerate(zayn_questions[:10]):
+            q["order"] = i + 1
+        zayn_questions = zayn_questions[:10]
 
         quiz_id = str(uuid.uuid4())
         with get_clario_ai_db() as ai_conn:
